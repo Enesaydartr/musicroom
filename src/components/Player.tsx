@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { Song } from '../types';
 
 interface PlayerProps {
-  song: Song;
+  currentSong: Song | null;
+  isPlaying: boolean;
   volume: number;
   onReady: (player: any) => void;
   onStateChange: (state: number) => void;
@@ -12,121 +13,76 @@ interface PlayerProps {
 declare global {
   interface Window {
     YT: any;
-    onYouTubeIframeAPIReady: () => void;
     isYouTubeAPIReady: boolean;
   }
 }
 
-export const Player: React.FC<PlayerProps> = ({ song, volume, onReady, onStateChange, onEnd }) => {
+export const Player: React.FC<PlayerProps> = ({ currentSong, isPlaying, volume, onReady, onStateChange, onEnd }) => {
   const playerRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isReadyRef = useRef(false);
 
-  // Initialize player only once
   useEffect(() => {
-    const createPlayer = () => {
-      try {
-        if (!window.YT || !window.YT.Player || !containerRef.current || playerRef.current) return;
-
-        playerRef.current = new window.YT.Player(containerRef.current, {
-          videoId: song.id,
-          playerVars: {
-            autoplay: 1,
-            controls: 0,
-            modestbranding: 1,
-            rel: 0,
-            showinfo: 0,
-            iv_load_policy: 3,
-            disablekb: 1,
-            origin: window.location.origin,
-            enablejsapi: 1,
-            widget_referrer: window.location.href,
-          },
-          events: {
-            onReady: (event: any) => {
-              try {
-                isReadyRef.current = true;
-                if (event.target && typeof event.target.setVolume === 'function') {
-                  event.target.setVolume(volume);
-                }
-                onReady(event.target);
-              } catch (e) {
-                console.debug('Player onReady error:', e);
-              }
+    const initPlayer = () => {
+      if (window.YT && window.YT.Player && currentSong?.id) {
+        if (playerRef.current) {
+          playerRef.current.loadVideoById(currentSong.id);
+        } else {
+          playerRef.current = new window.YT.Player('youtube-player', {
+            videoId: currentSong.id,
+            playerVars: {
+              autoplay: 1,
+              controls: 0,
+              disablekb: 1,
+              rel: 0,
+              modestbranding: 1,
+              origin: window.location.origin
             },
-            onStateChange: (event: any) => {
-              try {
+            events: {
+              onReady: (event: any) => {
+                if (isPlaying) event.target.playVideo();
+                event.target.setVolume(volume);
+                onReady(event.target);
+              },
+              onStateChange: (event: any) => {
                 onStateChange(event.data);
                 if (event.data === (window.YT?.PlayerState?.ENDED || 0)) {
                   onEnd();
                 }
-              } catch (e) {
-                console.debug('Player onStateChange error:', e);
               }
-            },
-            onError: (event: any) => {
-              console.error('YouTube Player Error:', event.data);
             }
-          },
-        });
-      } catch (error) {
-        console.error('Failed to initialize YouTube Player:', error);
-      }
-    };
-
-    if (window.isYouTubeAPIReady || (window.YT && window.YT.Player)) {
-      createPlayer();
-    } else {
-      const handleApiReady = () => {
-        createPlayer();
-        window.removeEventListener('youtube-api-ready', handleApiReady);
-      };
-      window.addEventListener('youtube-api-ready', handleApiReady);
-      
-      return () => {
-        window.removeEventListener('youtube-api-ready', handleApiReady);
-        if (playerRef.current && playerRef.current.destroy) {
-          playerRef.current.destroy();
-          playerRef.current = null;
-          isReadyRef.current = false;
+          });
         }
-      };
-    }
-
-    return () => {
-      if (playerRef.current && playerRef.current.destroy) {
-        playerRef.current.destroy();
-        playerRef.current = null;
-        isReadyRef.current = false;
       }
     };
-  }, []); // Empty dependency array to run only once
 
-  // Handle song changes without recreating the player
-  useEffect(() => {
-    if (isReadyRef.current && playerRef.current && playerRef.current.loadVideoById) {
-      playerRef.current.loadVideoById(song.id);
+    if (window.isYouTubeAPIReady) {
+      initPlayer();
+    } else {
+      window.addEventListener('youtube-api-ready', initPlayer);
     }
-  }, [song.id]);
+
+    return () => window.removeEventListener('youtube-api-ready', initPlayer);
+  }, [currentSong]);
 
   useEffect(() => {
-    if (isReadyRef.current && playerRef.current && playerRef.current.setVolume) {
+    if (playerRef.current && playerRef.current.getPlayerState) {
+      isPlaying ? playerRef.current.playVideo() : playerRef.current.pauseVideo();
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (playerRef.current && playerRef.current.setVolume) {
       playerRef.current.setVolume(volume);
     }
   }, [volume]);
 
   return (
-    <div className="w-full h-full overflow-hidden relative">
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div 
-          className="w-full h-full transform scale-[1.5]"
-        >
-          {/* Wrapper div to prevent YT API from destroying our ref container */}
-          <div id="yt-player-container">
-            <div ref={containerRef} />
-          </div>
-        </div>
+    <div className="fixed inset-0 overflow-hidden pointer-events-none bg-black -z-10">
+      {/* YouTube Logolarını Gizlemek İçin Scale Yapıyoruz */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] scale-110">
+        <div id="youtube-player" className="w-full h-full"></div>
       </div>
+      {/* Karartma Katmanı */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
     </div>
   );
 };

@@ -200,7 +200,8 @@ export default function App() {
       )}>
         {currentSong ? (
           <Player
-            song={currentSong}
+            currentSong={currentSong}
+            isPlaying={isPlaying}
             volume={volume}
             onReady={onPlayerReady}
             onStateChange={onPlayerStateChange}
