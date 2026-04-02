@@ -119,7 +119,7 @@ export const Player: React.FC<PlayerProps> = ({ song, volume, onReady, onStateCh
     <div className="w-full h-full overflow-hidden relative">
       <div className="absolute inset-0 flex items-center justify-center">
         <div 
-          className="w-full h-full transform scale-[1.4]"
+          className="w-full h-full transform scale-[1.5]"
         >
           {/* Wrapper div to prevent YT API from destroying our ref container */}
           <div id="yt-player-container">

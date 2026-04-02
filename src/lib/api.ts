@@ -3,7 +3,6 @@ import { parseYouTubeTitle } from './utils';
 
 const PIPED_INSTANCES = [
   'https://piped-api.lunar.icu',
-  'https://pipedapi.kavin.rocks',
   'https://api.piped.victr.me',
   'https://pipedapi.leptons.xyz'
 ];
@@ -43,7 +42,7 @@ export async function searchYouTube(query: string): Promise<Song[]> {
 
         return data.items.map((item: any) => {
           const { artist, track } = parseYouTubeTitle(item.title);
-          const videoId = item.url ? item.url.split('v=')[1] : item.id;
+          const videoId = item.url?.split('v=')[1] || item.id;
           
           return {
             id: videoId,
