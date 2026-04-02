@@ -1,0 +1,5 @@
+{
+  "name": "Lyrical Stream",
+  "description": "A minimalist music video streamer with synced lyrics using YouTube and LRCLIB APIs.",
+  "requestFramePermissions": []
+}
