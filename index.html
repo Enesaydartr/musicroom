@@ -5,28 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Enestify Premium</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      // YouTube API'nin fetch'i ezmeye çalışıp hata vermesini engelle
-      try {
-        const originalFetch = window.fetch;
-        Object.defineProperty(window, 'fetch', {
-          get() { return originalFetch; },
-          set() { console.debug('YouTube API fetch overwrite blocked.'); },
-          configurable: true,
-          enumerable: true
-        });
-      } catch (e) {}
-
-      // Global hata yakalayıcı ile YouTube API hatalarını sustur
-      window.addEventListener('error', (event) => {
-        if (event.message && (
-          event.message.includes('Cannot set property fetch') || 
-          event.message.includes('script error')
-        )) {
-          event.preventDefault();
-        }
-      }, true);
-    </script>
   </head>
   <body class="bg-black text-white">
     <div id="root"></div>
