@@ -25,20 +25,8 @@ export default function App() {
   const [volume, setVolume] = useState(80);
   const [player, setPlayer] = useState<any>(null);
   const [isPlayerBuffering, setIsPlayerBuffering] = useState(false);
-  const [isAPIReady, setIsAPIReady] = useState(false);
 
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Check YouTube API readiness
-  useEffect(() => {
-    if ((window as any).isYouTubeAPIReady) {
-      setIsAPIReady(true);
-    } else {
-      const handleReady = () => setIsAPIReady(true);
-      window.addEventListener('youtube-api-ready', handleReady);
-      return () => window.removeEventListener('youtube-api-ready', handleReady);
-    }
-  }, []);
 
   // Persist playlists
   useEffect(() => {
@@ -209,24 +197,17 @@ export default function App() {
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-white/20">
-            {!isAPIReady && currentSong ? (
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                <p className="text-white/40 text-xs tracking-widest uppercase animate-pulse">Initializing API</p>
-              </div>
-            ) : (
-              <>
-                <Music size={120} strokeWidth={1} className="mb-6 animate-pulse" />
-                <p className="text-xl font-light tracking-widest uppercase">Select a song to start</p>
-                <button 
-                  onClick={() => setIsSidebarOpen(true)}
-                  className="mt-8 px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full text-white border border-white/10 transition-all flex items-center gap-3 group pointer-events-auto"
-                >
-                  <Search size={20} className="group-hover:scale-110 transition-transform" />
-                  <span>Search Library</span>
-                </button>
-              </>
-            )}
+            <>
+              <Music size={120} strokeWidth={1} className="mb-6 animate-pulse" />
+              <p className="text-xl font-light tracking-widest uppercase">Select a song to start</p>
+              <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="mt-8 px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full text-white border border-white/10 transition-all flex items-center gap-3 group pointer-events-auto"
+              >
+                <Search size={20} className="group-hover:scale-110 transition-transform" />
+                <span>Search Library</span>
+              </button>
+            </>
           </div>
         )}
       </div>

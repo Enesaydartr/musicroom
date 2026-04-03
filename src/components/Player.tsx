@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
+import YouTube from 'react-youtube';
 import { Song } from '../types';
 
 interface PlayerProps {
@@ -10,79 +11,67 @@ interface PlayerProps {
   onEnd: () => void;
 }
 
-declare global {
-  interface Window {
-    YT: any;
-    isYouTubeAPIReady: boolean;
-  }
-}
+export const Player: React.FC<PlayerProps> = ({ 
+  currentSong, 
+  isPlaying, 
+  volume, 
+  onReady, 
+  onStateChange, 
+  onEnd 
+}) => {
+  const playerRef = React.useRef<any>(null);
 
-export const Player: React.FC<PlayerProps> = ({ currentSong, isPlaying, volume, onReady, onStateChange, onEnd }) => {
-  const playerRef = useRef<any>(null);
-
-  useEffect(() => {
-    const initPlayer = () => {
-      if (window.YT && window.YT.Player && currentSong?.id) {
-        if (playerRef.current) {
-          playerRef.current.loadVideoById(currentSong.id);
-        } else {
-          playerRef.current = new window.YT.Player('youtube-player', {
-            videoId: currentSong.id,
-            playerVars: {
-              autoplay: 1,
-              controls: 0,
-              disablekb: 1,
-              rel: 0,
-              modestbranding: 1,
-              origin: window.location.origin
-            },
-            events: {
-              onReady: (event: any) => {
-                if (isPlaying) event.target.playVideo();
-                event.target.setVolume(volume);
-                onReady(event.target);
-              },
-              onStateChange: (event: any) => {
-                onStateChange(event.data);
-                if (event.data === (window.YT?.PlayerState?.ENDED || 0)) {
-                  onEnd();
-                }
-              }
-            }
-          });
-        }
+  React.useEffect(() => {
+    if (playerRef.current) {
+      if (isPlaying) {
+        playerRef.current.playVideo();
+      } else {
+        playerRef.current.pauseVideo();
       }
-    };
-
-    if (window.isYouTubeAPIReady) {
-      initPlayer();
-    } else {
-      window.addEventListener('youtube-api-ready', initPlayer);
-    }
-
-    return () => window.removeEventListener('youtube-api-ready', initPlayer);
-  }, [currentSong]);
-
-  useEffect(() => {
-    if (playerRef.current && playerRef.current.getPlayerState) {
-      isPlaying ? playerRef.current.playVideo() : playerRef.current.pauseVideo();
     }
   }, [isPlaying]);
 
-  useEffect(() => {
-    if (playerRef.current && playerRef.current.setVolume) {
+  React.useEffect(() => {
+    if (playerRef.current) {
       playerRef.current.setVolume(volume);
     }
   }, [volume]);
 
+  if (!currentSong) return null;
+
+  const opts = {
+    height: '100%',
+    width: '100%',
+    playerVars: {
+      autoplay: 1,
+      controls: 0,
+      rel: 0,
+      iv_load_policy: 3,
+      disablekb: 1,
+      modestbranding: 1,
+      showinfo: 0,
+    },
+  };
+
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none bg-black -z-10">
-      {/* YouTube Logolarını Gizlemek İçin Scale Yapıyoruz */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] scale-110">
-        <div id="youtube-player" className="w-full h-full"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%]">
+        <div className="w-full h-full transform scale-[1.5]">
+          <YouTube
+            videoId={currentSong.id}
+            opts={opts}
+            onReady={(event) => {
+              playerRef.current = event.target;
+              onReady(event.target);
+            }}
+            onStateChange={(event) => onStateChange(event.data)}
+            onEnd={onEnd}
+            className="w-full h-full"
+            iframeClassName="w-full h-full"
+          />
+        </div>
       </div>
-      {/* Karartma Katmanı */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"></div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { LRCLibResponse, Song } from '../types';
 import { parseYouTubeTitle } from './utils';
 
-// Şu an en aktif Piped API'leri
+// Şu an en güncel çalışan Piped adresleri
 const PIPED_INSTANCES = [
   'https://pipedapi.smnz.de',
   'https://piped-api.garudalinux.org',
@@ -49,15 +49,22 @@ export async function searchYouTube(query: string): Promise<Song[]> {
   // 2. Try Piped API
   for (const instance of PIPED_INSTANCES) {
     try {
-      const response = await fetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=videos`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 sn timeout
+
+      const response = await fetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=videos`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
       if (!response.ok) continue;
-      
       const data = await response.json();
+      
       if (!data || !data.items || !Array.isArray(data.items)) continue;
 
       return data.items.map((item: any) => {
-        const { artist, track } = parseYouTubeTitle(item.title);
         const videoId = item.url ? item.url.split('v=')[1] : item.id;
+        const { artist, track } = parseYouTubeTitle(item.title);
         
         return {
           id: videoId,
@@ -68,7 +75,7 @@ export async function searchYouTube(query: string): Promise<Song[]> {
         };
       });
     } catch (e) {
-      console.warn(`Piped instance ${instance} failed.`);
+      console.log(`${instance} yanıt vermedi, diğerine geçiliyor...`);
       continue;
     }
   }
@@ -76,7 +83,14 @@ export async function searchYouTube(query: string): Promise<Song[]> {
   // 3. Try Invidious API as last resort
   for (const instance of INVIDIOUS_INSTANCES) {
     try {
-      const response = await fetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+      const response = await fetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
       if (!response.ok) continue;
       
       const data = await response.json();
@@ -102,7 +116,6 @@ export async function searchYouTube(query: string): Promise<Song[]> {
     }
   }
 
-  console.error('All search APIs failed');
   return [];
 }
 

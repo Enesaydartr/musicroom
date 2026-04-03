@@ -6,33 +6,27 @@
     <title>Enestify Premium</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      // YouTube API hazır olduğunda React'e haber ver
-      window.onYouTubeIframeAPIReady = () => {
-        window.isYouTubeAPIReady = true;
-        window.dispatchEvent(new Event('youtube-api-ready'));
-      };
-      
-      // Zararsız hataları sustur
-      window.onerror = (msg) => {
-        const sMsg = String(msg).toLowerCase();
-        if (sMsg.includes('script error') || sMsg.includes('cannot set property fetch')) return true;
-        return false;
-      };
-
-      // Prevent 'Cannot set property fetch' by providing a dummy setter
+      // YouTube API'nin fetch'i ezmeye çalışıp hata vermesini engelle
       try {
         const originalFetch = window.fetch;
         Object.defineProperty(window, 'fetch', {
           get() { return originalFetch; },
-          set() { console.debug('Blocked attempt to overwrite window.fetch'); },
+          set() { console.debug('YouTube API fetch overwrite blocked.'); },
           configurable: true,
           enumerable: true
         });
-      } catch (e) {
-        // Silent fail
-      }
+      } catch (e) {}
+
+      // Global hata yakalayıcı ile YouTube API hatalarını sustur
+      window.addEventListener('error', (event) => {
+        if (event.message && (
+          event.message.includes('Cannot set property fetch') || 
+          event.message.includes('script error')
+        )) {
+          event.preventDefault();
+        }
+      }, true);
     </script>
-    <script src="https://www.youtube.com/iframe_api" async crossorigin="anonymous"></script>
   </head>
   <body class="bg-black text-white">
     <div id="root"></div>
