@@ -50,8 +50,7 @@ export const Player: React.FC<PlayerProps> = ({
       disablekb: 1,
       modestbranding: 1,
       showinfo: 0,
-      // ELECTRON (SİYAH EKRAN) HATASINI ÇÖZEN SATIR
-      origin: 'https://www.youtube.com'
+      origin: window.location.origin
     },
   };
 
